@@ -6,9 +6,17 @@ package frc.robot;
 
 import static edu.wpi.first.units.Units.*;
 
+import java.util.List;
+
 import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
 import com.ctre.phoenix6.swerve.SwerveRequest;
+import com.pathplanner.lib.auto.AutoBuilder;
+import com.pathplanner.lib.path.GoalEndState;
+import com.pathplanner.lib.path.PathConstraints;
+import com.pathplanner.lib.path.PathPlannerPath;
+import com.pathplanner.lib.path.Waypoint;
 
+import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
@@ -46,6 +54,8 @@ public class RobotContainer {
     double kP_angle = 5;
     double currentTA = 0;
     double currentTX = 0;
+    private boolean isFollowingPath = false;
+
 
     public double LimelightTranslation(double ta) {
         double translation = 0;
@@ -60,10 +70,50 @@ public class RobotContainer {
         }
         return translation;
     }
+
+    public PathPlannerPath GeneratePath(Pose2d startPose, Pose2d endPose) {
+        List<Waypoint> waypoints = PathPlannerPath.waypointsFromPoses(
+            startPose,
+            endPose
+        );
+    
+        PathConstraints constraints = new PathConstraints(3.0, 3.0, 2 * Math.PI, 4 * Math.PI);
+    
+        // Create the path using the waypoints
+        PathPlannerPath path = new PathPlannerPath(
+            waypoints,
+            constraints,
+            null,
+            new GoalEndState(0.0, endPose.getRotation()) // end rotation and velocity
+        );
+    
+        path.preventFlipping = true;
+        return path;
+    }    
+
     
     private void configureBindings() {
         // Note that X is defined as forward according to WPILib convention,
         // and Y is defined as to the left according to WPILib convention.
+
+        controller.a().onTrue(Commands.runOnce(()-> {
+	        currentTA = LimelightHelpers.getTA("limelight");
+	        if (currentTA <= 2 && !isFollowingPath) {
+		        Pose2d start = LimelightHelpers.getBotPose2d_wpiBlue("limelight");
+                Pose2d end = new Pose2d(2.0, 4.0, Rotation2d.fromDegrees(0));
+                PathPlannerPath limelightPath = GeneratePath(start, end);
+
+                Command pathCommand = AutoBuilder.followPath(limelightPath)
+                .until(() -> LimelightHelpers.getTA("limelight") > 2)
+                .andThen(() -> isFollowingPath = false);
+
+                pathCommand.schedule(); 
+                isFollowingPath = true;
+            }
+        })
+    );
+
+
         drivetrain.setDefaultCommand(
             drivetrain.applyRequest(() -> {
                 double vx = 0;
@@ -73,7 +123,7 @@ public class RobotContainer {
                 currentTA = LimelightHelpers.getTA("limelight");
                 currentTX = LimelightHelpers.getTX("limelight");             
                 
-                if (controller.a().getAsBoolean()) {   
+                if (controller.a().getAsBoolean() && !isFollowingPath) {   
                     vx = 0;
                     vy = LimelightTranslation(currentTA) * -1;
                     angle = currentTX * kP_angle * -1;
@@ -91,7 +141,7 @@ public class RobotContainer {
                 }
             })
         );
-    
+
 
         // Idle while the robot is disabled. This ensures the configured
         // neutral mode is applied to the drive motors while disabled.
