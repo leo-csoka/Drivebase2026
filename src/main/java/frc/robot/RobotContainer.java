@@ -55,7 +55,7 @@ public class RobotContainer {
     double kP_angle = 5;
     double currentTA = 0;
     double currentTX = 0;
-    private boolean isFollowingPath = false;
+    public boolean isFollowingPath = false;
 
 
     public double LimelightTranslation(double ta) {
@@ -92,26 +92,32 @@ public class RobotContainer {
         return path;
     }    
 
-    
-    private void configureBindings() {
-        // Note that X is defined as forward according to WPILib convention,
-        // and Y is defined as to the left according to WPILib convention.
+    void setIsFollowingPath(){
+        isFollowingPath = false;
+    }
 
-        controller.a().onTrue(Commands.runOnce(()-> {
-	        currentTA = LimelightHelpers.getTA("limelight");
+    public Command limelight_path() {
+        currentTA = LimelightHelpers.getTA("limelight");
 	        if (!isFollowingPath) {
 		        Pose2d start = LimelightHelpers.getBotPose2d_wpiBlue("limelight");
                 Pose2d end = new Pose2d(2.0, 4.0, Rotation2d.fromDegrees(0));
                 PathPlannerPath limelightPath = GeneratePath(start, end);
 
-                Command pathCommand = AutoBuilder.followPath(limelightPath)
-                .andThen(() -> isFollowingPath = false);
-
-                pathCommand.schedule(); 
                 isFollowingPath = true;
+
+                return AutoBuilder.followPath(limelightPath).andThen(() -> isFollowingPath = false);
             }
-        })
-    );
+            else{
+                return Commands.none();
+            }
+    }
+
+    
+    private void configureBindings() {
+        // Note that X is defined as forward according to WPILib convention,
+        // and Y is defined as to the left according to WPILib convention.
+
+        controller.a().onTrue(limelight_path());
 
 
         drivetrain.setDefaultCommand(
@@ -169,6 +175,6 @@ public class RobotContainer {
     }
 
     public Command getAutonomousCommand() {
-        return new PathPlannerAuto("example");
+        return new PathPlannerAuto("Example");
     }
 }
