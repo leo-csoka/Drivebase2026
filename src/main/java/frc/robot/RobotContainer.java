@@ -98,13 +98,12 @@ public class RobotContainer {
 
         controller.a().onTrue(Commands.runOnce(()-> {
 	        currentTA = LimelightHelpers.getTA("limelight");
-	        if (currentTA <= 2 && !isFollowingPath) {
+	        if (!isFollowingPath) {
 		        Pose2d start = LimelightHelpers.getBotPose2d_wpiBlue("limelight");
                 Pose2d end = new Pose2d(2.0, 4.0, Rotation2d.fromDegrees(0));
                 PathPlannerPath limelightPath = GeneratePath(start, end);
 
                 Command pathCommand = AutoBuilder.followPath(limelightPath)
-                .until(() -> LimelightHelpers.getTA("limelight") > 2)
                 .andThen(() -> isFollowingPath = false);
 
                 pathCommand.schedule(); 
@@ -123,7 +122,7 @@ public class RobotContainer {
                 currentTA = LimelightHelpers.getTA("limelight");
                 currentTX = LimelightHelpers.getTX("limelight");             
                 
-                if (controller.a().getAsBoolean() && !isFollowingPath) {   
+                if (controller.x().getAsBoolean() && !isFollowingPath) {   
                     vx = 0;
                     vy = LimelightTranslation(currentTA) * -1;
                     angle = currentTX * kP_angle * -1;
