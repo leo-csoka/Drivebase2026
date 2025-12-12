@@ -51,14 +51,14 @@ public class RobotContainer {
 
     public final CommandSwerveDrivetrain drivetrain = TunerConstants.createDrivetrain();
 
-    private final LimelightCmd limelightCmd = new LimelightCmd(drivetrain);
+    /*private final LimelightCmd limelightCmd = new LimelightCmd(drivetrain);
     public final CANBus canivore = new CANBus("drivetrain");
-    private final Pigeon2 pigeon = new Pigeon2(0, canivore);
+    private final Pigeon2 pigeon = new Pigeon2(0, canivore);*/
+
 
     public RobotContainer() {
+        //LimelightHelpers.SetIMUMode("limelight", 0);
         configureBindings();
-        
-        // this might blow up
     }            
 
     double kP_angle = 5;
@@ -121,11 +121,12 @@ public class RobotContainer {
         // Note that X is defined as forward according to WPILib convention,
         // and Y is defined as to the left according to WPILib convention.
 
-        controller.a().onTrue(limelight_path());
-
+        controller.a().onTrue(drivetrain.runOnce(() -> System.out.println("uhhh")));
 
         drivetrain.setDefaultCommand(
             drivetrain.applyRequest(() -> {
+                
+
                 double vx = 0;
                 double vy = 0;
                 double angle = 0;
@@ -142,6 +143,7 @@ public class RobotContainer {
                                 .withVelocityY(0)
                                 .withRotationalRate(Math.toRadians(angle));
                 } else {
+                    System.out.println("guhh");
                     vx = (-controller.getLeftY() * MaxSpeed) * 0.5;
                     vy = (-controller.getLeftX() * MaxSpeed) * 0.5;
                     angle = (-controller.getRightX() * MaxAngularRate);
@@ -161,9 +163,9 @@ public class RobotContainer {
         );
 
         //controller.a().whileTrue(drivetrain.applyRequest(() -> brake));
-        controller.b().whileTrue(drivetrain.applyRequest(() ->
-            point.withModuleDirection(new Rotation2d(-controller.getLeftY(), -controller.getLeftX()))
-        ));
+        // controller.b().whileTrue(drivetrain.applyRequest(() ->
+        //     point.withModuleDirection(new Rotation2d(-controller.getLeftY(), -controller.getLeftX()))
+        // ));
 
         // Run SysId routines when holding back/start and X/Y.
         // Note that each routine should be run exactly once in a single log.
