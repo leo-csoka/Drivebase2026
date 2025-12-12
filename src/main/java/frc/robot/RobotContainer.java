@@ -8,6 +8,8 @@ import static edu.wpi.first.units.Units.*;
 
 import java.util.List;
 
+import com.ctre.phoenix6.CANBus;
+import com.ctre.phoenix6.hardware.Pigeon2;
 import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
 import com.ctre.phoenix6.swerve.SwerveRequest;
 import com.pathplanner.lib.auto.AutoBuilder;
@@ -48,9 +50,16 @@ public class RobotContainer {
 
     public final CommandSwerveDrivetrain drivetrain = TunerConstants.createDrivetrain();
 
+    public final CANBus canivore = new CANBus("drivetrain");
+    private final Pigeon2 pigeon = new Pigeon2(0, canivore);
+
     public RobotContainer() {
         configureBindings();
-    }
+        Commands.run(() -> {
+            double robotYawInDegrees = pigeon.getRotation2d().getDegrees();
+            LimelightHelpers.SetRobotOrientation("limelight", robotYawInDegrees, 0, 0, 0, 0, 0);
+        }).schedule();
+    }            
 
     double kP_angle = 5;
     double currentTA = 0;
@@ -92,10 +101,6 @@ public class RobotContainer {
         return path;
     }    
 
-    void setIsFollowingPath(){
-        isFollowingPath = false;
-    }
-
     public Command limelight_path() {
         currentTA = LimelightHelpers.getTA("limelight");
 	        if (!isFollowingPath) {
@@ -110,8 +115,7 @@ public class RobotContainer {
             else{
                 return Commands.none();
             }
-    }
-
+    } 
     
     private void configureBindings() {
         // Note that X is defined as forward according to WPILib convention,
