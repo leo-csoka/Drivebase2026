@@ -23,6 +23,7 @@ public class LimelightCmd extends Command {
     public void execute() {
         double robotYawInDegrees = pigeon.getRotation2d().getDegrees();
         LimelightHelpers.SetRobotOrientation("limelight", -robotYawInDegrees, 0, 0, 0, 0, 0);
+        //System.out.println(robotYawInDegrees);
         // sets orientation for megatag2
         boolean MegaTagVersion = LimelightHelpers.getBotPoseEstimate_wpiBlue("limelight").isMegaTag2;
         if (MegaTagVersion == true) {

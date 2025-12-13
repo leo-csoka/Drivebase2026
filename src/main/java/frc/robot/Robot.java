@@ -4,15 +4,15 @@
 
 package frc.robot;
 
-import com.ctre.phoenix6.CANBus;
-import com.ctre.phoenix6.hardware.Pigeon2;
-
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj2.command.Command;
+import frc.robot.commands.LimelightCmd;  
+import frc.robot.RobotContainer;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 
 public class Robot extends TimedRobot {
   private Command m_autonomousCommand;
+  private Command LimelightCmd = new LimelightCmd(RobotContainer.drivetrain);
 
   private final RobotContainer m_robotContainer;
 
@@ -22,7 +22,9 @@ public class Robot extends TimedRobot {
 
   @Override
   public void robotPeriodic() {
-      }
+    CommandScheduler.getInstance().run(); 
+    LimelightCmd.schedule();
+  }
 
   @Override
   public void disabledInit() {}

@@ -37,7 +37,7 @@ public class RobotContainer {
 
     /* Setting up bindings for necessary control of the swerve drive platform */
     private final SwerveRequest.FieldCentric drive = new SwerveRequest.FieldCentric()
-            .withDeadband(MaxSpeed * 0.05).withRotationalDeadband(MaxAngularRate * 0.1) // Add a 10% deadband, drive deadband 5%
+            .withDeadband(MaxSpeed * 0.1).withRotationalDeadband(MaxAngularRate * 0.1) // Add a 10% deadband
             .withDriveRequestType(DriveRequestType.OpenLoopVoltage); // Use open-loop control for drive motors
     private final SwerveRequest.RobotCentric driveRobotOriented = new SwerveRequest.RobotCentric()
             .withDeadband(MaxSpeed * 0.05).withRotationalDeadband(MaxAngularRate * 0.05) // Add a 10% deadband
@@ -49,22 +49,16 @@ public class RobotContainer {
 
     private final CommandXboxController controller = new CommandXboxController(0);
 
-    public final CommandSwerveDrivetrain drivetrain = TunerConstants.createDrivetrain();
-
-    /*private final LimelightCmd limelightCmd = new LimelightCmd(drivetrain);
-    public final CANBus canivore = new CANBus("drivetrain");
-    private final Pigeon2 pigeon = new Pigeon2(0, canivore);*/
-
+    public static final CommandSwerveDrivetrain drivetrain = TunerConstants.createDrivetrain();
 
     public RobotContainer() {
-        //LimelightHelpers.SetIMUMode("limelight", 0);
         configureBindings();
-    }            
+    }          
 
     double kP_angle = 5;
     double currentTA = 0;
     double currentTX = 0;
-    public boolean isFollowingPath = false;
+    private boolean isFollowingPath = false;
 
 
     public double LimelightTranslation(double ta) {
@@ -101,32 +95,29 @@ public class RobotContainer {
         return path;
     }    
 
-    public Command limelight_path() {
-        currentTA = LimelightHelpers.getTA("limelight");
-	        if (!isFollowingPath) {
-		        Pose2d start = LimelightHelpers.getBotPose2d_wpiBlue("limelight");
-                Pose2d end = new Pose2d(2.0, 4.0, Rotation2d.fromDegrees(0));
-                PathPlannerPath limelightPath = GeneratePath(start, end);
-
-                isFollowingPath = true;
-
-                return AutoBuilder.followPath(limelightPath).andThen(() -> isFollowingPath = false);
-            }
-            else{
-                return Commands.none();
-            }
-    } 
     
     private void configureBindings() {
         // Note that X is defined as forward according to WPILib convention,
         // and Y is defined as to the left according to WPILib convention.
 
-        controller.a().onTrue(drivetrain.runOnce(() -> System.out.println("uhhh")));
+        controller.a().onTrue(Commands.runOnce(()-> {
+	        currentTA = LimelightHelpers.getTA("limelight");
+	        if (!isFollowingPath) {
+		        Pose2d start = LimelightHelpers.getBotPose2d_wpiBlue("limelight");
+                Pose2d end = new Pose2d(2.0, 4.0, Rotation2d.fromDegrees(0));
+                PathPlannerPath limelightPath = GeneratePath(start, end);
 
-        drivetrain.setDefaultCommand(
+                Command pathCommand = AutoBuilder.followPath(limelightPath)
+                .andThen(() -> isFollowingPath = false);
+
+                pathCommand.schedule(); 
+                isFollowingPath = true;
+            }
+        })
+    );
+
+    drivetrain.setDefaultCommand(
             drivetrain.applyRequest(() -> {
-                
-
                 double vx = 0;
                 double vy = 0;
                 double angle = 0;
@@ -143,7 +134,6 @@ public class RobotContainer {
                                 .withVelocityY(0)
                                 .withRotationalRate(Math.toRadians(angle));
                 } else {
-                    System.out.println("guhh");
                     vx = (-controller.getLeftY() * MaxSpeed) * 0.5;
                     vy = (-controller.getLeftX() * MaxSpeed) * 0.5;
                     angle = (-controller.getRightX() * MaxAngularRate);
@@ -154,8 +144,7 @@ public class RobotContainer {
             })
         );
 
-
-        // Idle while the robot is disabled. This ensures the configured
+ // Idle while the robot is disabled. This ensures the configured
         // neutral mode is applied to the drive motors while disabled.
         final var idle = new SwerveRequest.Idle();
         RobotModeTriggers.disabled().whileTrue(
@@ -163,9 +152,9 @@ public class RobotContainer {
         );
 
         //controller.a().whileTrue(drivetrain.applyRequest(() -> brake));
-        // controller.b().whileTrue(drivetrain.applyRequest(() ->
-        //     point.withModuleDirection(new Rotation2d(-controller.getLeftY(), -controller.getLeftX()))
-        // ));
+        controller.b().whileTrue(drivetrain.applyRequest(() ->
+            point.withModuleDirection(new Rotation2d(-controller.getLeftY(), -controller.getLeftX()))
+        ));
 
         // Run SysId routines when holding back/start and X/Y.
         // Note that each routine should be run exactly once in a single log.
@@ -181,6 +170,6 @@ public class RobotContainer {
     }
 
     public Command getAutonomousCommand() {
-        return new PathPlannerAuto("Example");
+        return new PathPlannerAuto("example");
     }
 }
