@@ -22,15 +22,13 @@ public class LimelightCmd extends Command {
     @Override
     public void execute() {
         double robotYawInDegrees = pigeon.getRotation2d().getDegrees();
-        LimelightHelpers.SetRobotOrientation("limelight", -robotYawInDegrees, 0, 0, 0, 0, 0);
+        LimelightHelpers.SetRobotOrientation("limelight", robotYawInDegrees, 0, 0, 0, 0, 0);
         //System.out.println(robotYawInDegrees);
         // sets orientation for megatag2
-        boolean MegaTagVersion = LimelightHelpers.getBotPoseEstimate_wpiBlue("limelight").isMegaTag2;
-        if (MegaTagVersion == true) {
-            System.out.println("Megatag2"); // do we have megatag2?
-        }
-        Pose2d botPose = LimelightHelpers.getBotPoseEstimate_wpiBlue("limelight").pose;
-        double timestamp = LimelightHelpers.getBotPoseEstimate_wpiBlue("limelight").timestampSeconds;
+        LimelightHelpers.PoseEstimate current_estimate = LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2("limelight");
+ 
+        Pose2d botPose = current_estimate.pose;
+        double timestamp = current_estimate.timestampSeconds;
         drivetrain.addVisionMeasurement(botPose, timestamp);
         // sends pose to drivetrain for autobuilder
     }

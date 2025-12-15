@@ -101,9 +101,9 @@ public class RobotContainer {
         // and Y is defined as to the left according to WPILib convention.
 
         controller.a().onTrue(Commands.runOnce(()-> {
-	        currentTA = LimelightHelpers.getTA("limelight");
-	        if (!isFollowingPath) {
-		        Pose2d start = LimelightHelpers.getBotPose2d_wpiBlue("limelight");
+            currentTA = LimelightHelpers.getTA("limelight");
+            if (!isFollowingPath) {
+                Pose2d start = LimelightHelpers.getBotPose2d_wpiBlue("limelight");
                 Pose2d end = new Pose2d(2.0, 4.0, Rotation2d.fromDegrees(0));
                 PathPlannerPath limelightPath = GeneratePath(start, end);
 
@@ -152,9 +152,7 @@ public class RobotContainer {
         );
 
         //controller.a().whileTrue(drivetrain.applyRequest(() -> brake));
-        controller.b().whileTrue(drivetrain.applyRequest(() ->
-            point.withModuleDirection(new Rotation2d(-controller.getLeftY(), -controller.getLeftX()))
-        ));
+        controller.b().onTrue(new LimelightCmd(drivetrain));
 
         // Run SysId routines when holding back/start and X/Y.
         // Note that each routine should be run exactly once in a single log.
