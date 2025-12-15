@@ -24,7 +24,7 @@ public class LimelightCmd extends Command {
  
         Pose2d botPose = current_estimate.pose;
         double timestamp = current_estimate.timestampSeconds;
-        drivetrain.addVisionMeasurement(botPose, timestamp);
+        // drivetrain.addVisionMeasurement(botPose, timestamp);
         // sends pose to drivetrain for autobuilder
     }
 

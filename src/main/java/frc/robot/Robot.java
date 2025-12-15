@@ -23,7 +23,7 @@ public class Robot extends TimedRobot {
   @Override
   public void robotPeriodic() {
     CommandScheduler.getInstance().run(); 
-    LimelightCmd.schedule();
+    //LimelightCmd.schedule();
   }
 
   @Override
