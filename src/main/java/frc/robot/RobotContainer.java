@@ -31,8 +31,10 @@ import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 import frc.robot.commands.LimelightCmd;
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
+import frc.robot.subsystems.ElasticSubsystem;
 
 public class RobotContainer {
+    private final ElasticSubsystem elasticSubsystem = new ElasticSubsystem();
     private double MaxSpeed = TunerConstants.kSpeedAt12Volts.in(MetersPerSecond); // kSpeedAt12Volts desired top speed
     private double MaxAngularRate = RotationsPerSecond.of(0.75).in(RadiansPerSecond); // 3/4 of a rotation per second max angular velocity
 
@@ -124,19 +126,19 @@ public class RobotContainer {
 
     drivetrain.setDefaultCommand(
             drivetrain.applyRequest(() -> {
-                double vx = 0;
                 double vy = 0;
+                double vx = 0;
                 double angle = 0;
                 
                 currentTA = LimelightHelpers.getTA("limelight");
                 currentTX = LimelightHelpers.getTX("limelight");             
                 
                 if (controller.x().getAsBoolean() && !isFollowingPath) {   
-                    vx = 0;
-                    vy = LimelightTranslation(currentTA) * -1;
+                    vy = 0;
+                    vx = LimelightTranslation(currentTA) * -1;
                     angle = currentTX * kP_angle * -1;
                     System.out.println(angle);              
-                    return driveRobotOriented.withVelocityX(vy)
+                    return driveRobotOriented.withVelocityX(vx)
                                 .withVelocityY(0)
                                 .withRotationalRate(Math.toRadians(angle));
                 } else {
