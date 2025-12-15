@@ -26,6 +26,7 @@ import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
+import edu.wpi.first.wpilibj2.command.button.Trigger;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 import frc.robot.commands.LimelightCmd;
 import frc.robot.generated.TunerConstants;
@@ -50,6 +51,11 @@ public class RobotContainer {
     private final CommandXboxController controller = new CommandXboxController(0);
 
     public static final CommandSwerveDrivetrain drivetrain = TunerConstants.createDrivetrain();
+
+    private final Trigger a = controller.a();
+    private final Trigger b = controller.b();
+    private final Trigger x = controller.x();
+    private final Trigger y = controller.y();
 
     public RobotContainer() {
         configureBindings();
@@ -100,7 +106,7 @@ public class RobotContainer {
         // Note that X is defined as forward according to WPILib convention,
         // and Y is defined as to the left according to WPILib convention.
 
-        controller.a().onTrue(Commands.runOnce(()-> {
+        a.onTrue(Commands.runOnce(()-> {
             currentTA = LimelightHelpers.getTA("limelight");
             if (!isFollowingPath) {
                 Pose2d start = LimelightHelpers.getBotPose2d_wpiBlue("limelight");
@@ -152,7 +158,7 @@ public class RobotContainer {
         );
 
         //controller.a().whileTrue(drivetrain.applyRequest(() -> brake));
-        controller.b().onTrue(new LimelightCmd(drivetrain));
+        b.onTrue(new LimelightCmd(drivetrain));
 
         // Run SysId routines when holding back/start and X/Y.
         // Note that each routine should be run exactly once in a single log.
