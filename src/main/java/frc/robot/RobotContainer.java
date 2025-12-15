@@ -28,13 +28,12 @@ import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
-import frc.robot.commands.LimelightCmd;
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
 import frc.robot.subsystems.ElasticSubsystem;
+import frc.robot.subsystems.LimelightSubsystem;
 
 public class RobotContainer {
-    private final ElasticSubsystem elasticSubsystem = new ElasticSubsystem();
     private double MaxSpeed = TunerConstants.kSpeedAt12Volts.in(MetersPerSecond); // kSpeedAt12Volts desired top speed
     private double MaxAngularRate = RotationsPerSecond.of(0.75).in(RadiansPerSecond); // 3/4 of a rotation per second max angular velocity
 
@@ -53,6 +52,8 @@ public class RobotContainer {
     private final CommandXboxController controller = new CommandXboxController(0);
 
     public static final CommandSwerveDrivetrain drivetrain = TunerConstants.createDrivetrain();
+    private final ElasticSubsystem elasticSubsystem = new ElasticSubsystem();
+    private final LimelightSubsystem limelightSubsystem = new LimelightSubsystem(drivetrain);
 
     private final Trigger a = controller.a();
     private final Trigger b = controller.b();
@@ -160,7 +161,6 @@ public class RobotContainer {
         );
 
         //controller.a().whileTrue(drivetrain.applyRequest(() -> brake));
-        b.onTrue(new LimelightCmd(drivetrain));
 
         // Run SysId routines when holding back/start and X/Y.
         // Note that each routine should be run exactly once in a single log.
