@@ -12,6 +12,10 @@ public class LimelightSubsystem extends SubsystemBase{
         this.drivetrain = drivetrain;
     }
 
+    public void zeroPigeonYaw() {
+        drivetrain.getPigeon2().setYaw(0);
+    }
+
     @Override
     public void periodic() {
         double robotYawInDegrees = drivetrain.getPigeon2().getRotation2d().getDegrees();
