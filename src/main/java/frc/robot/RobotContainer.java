@@ -22,6 +22,7 @@ import com.pathplanner.lib.path.Waypoint;
 
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -34,7 +35,6 @@ import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
 import frc.robot.subsystems.ElasticSubsystem;
-import frc.robot.subsystems.LimelightSubsystem;
 
 public class RobotContainer {
     private double MaxSpeed = TunerConstants.kSpeedAt12Volts.in(MetersPerSecond); // kSpeedAt12Volts desired top speed
@@ -56,18 +56,21 @@ public class RobotContainer {
 
     public static final CommandSwerveDrivetrain drivetrain = TunerConstants.createDrivetrain();
     private final ElasticSubsystem elasticSubsystem = new ElasticSubsystem();
-    private final LimelightSubsystem limelightSubsystem = new LimelightSubsystem(drivetrain);
+    // private final LimelightSubsystem limelightSubsystem = new LimelightSubsystem(drivetrain);
+
+    public boolean isFollowingPath = false;
+
 
     private final Trigger a = controller.a();
     private final Trigger b = controller.b();
     private final Trigger x = controller.x();
     private final Trigger y = controller.y();
 
-    private final SendableChooser<Command> autoChooser;
+    private SendableChooser<Command> autoChooser;
 
     public RobotContainer() {
+        isFollowingPath = false;
         autoChooser = AutoBuilder.buildAutoChooser("Example");
-
         configureBindings();
 
         // Warmup PathPlanner to avoid Java pauses
@@ -77,8 +80,6 @@ public class RobotContainer {
     double kP_angle = 5;
     double currentTA = 0;
     double currentTX = 0;
-    private boolean isFollowingPath = false;
-
 
     public double LimelightTranslation(double ta) {
         double translation = 0;
@@ -94,24 +95,20 @@ public class RobotContainer {
         return translation;
     }
 
-    public PathPlannerPath GeneratePath(Pose2d startPose, Pose2d endPose) {
-        List<Waypoint> waypoints = PathPlannerPath.waypointsFromPoses(
-            startPose,
-            endPose
+    public Command GeneratePath(Pose2d targetPose) {
+
+        // Create the constraints to use while pathfinding
+        PathConstraints constraints = new PathConstraints(
+                0.5, 0.5,
+                Units.degreesToRadians(540), Units.degreesToRadians(720));
+
+        // Since AutoBuilder is configured, we can use it to build pathfinding commands
+        Command pathfindingCommand = AutoBuilder.pathfindToPose(
+        targetPose,
+        constraints,
+        0.0 // Goal end velocity in meters/sec        
         );
-    
-        PathConstraints constraints = new PathConstraints(3.0, 3.0, 2 * Math.PI, 4 * Math.PI);
-    
-        // Create the path using the waypoints
-        PathPlannerPath path = new PathPlannerPath(
-            waypoints,
-            constraints,
-            null,
-            new GoalEndState(0.0, endPose.getRotation()) // end rotation and velocity
-        );
-    
-        path.preventFlipping = true;
-        return path;
+        return pathfindingCommand;
     }    
 
     
@@ -120,17 +117,13 @@ public class RobotContainer {
         // and Y is defined as to the left according to WPILib convention.
 
         a.onTrue(Commands.runOnce(()-> {
-            currentTA = LimelightHelpers.getTA("limelight");
+            currentTA = LimelightHelpers.getTA("limelight"); 
             if (!isFollowingPath) {
                 isFollowingPath = true;
-                Pose2d start = LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2("limelight").pose;
-                Pose2d end = new Pose2d(1.5, 6.5, Rotation2d.fromDegrees(0));
-                PathPlannerPath limelightPath = GeneratePath(start, end);
+                Pose2d target = new Pose2d(4, 2, Rotation2d.fromDegrees(0));
+                Command limelightPath = GeneratePath(target);
 
-                Command pathCommand = AutoBuilder.followPath(limelightPath)
-                .andThen(() -> isFollowingPath = false);
-
-                pathCommand.schedule(); 
+                limelightPath.andThen(() -> isFollowingPath = false).schedule();
             }
         })
     );
@@ -144,7 +137,7 @@ public class RobotContainer {
                 currentTA = LimelightHelpers.getTA("limelight");
                 currentTX = LimelightHelpers.getTX("limelight");             
                 
-                if (x.getAsBoolean()) {   
+                if (x.getAsBoolean() && !isFollowingPath) {   
                     vy = 0;
                     vx = LimelightTranslation(currentTA) * -1;
                     angle = currentTX * kP_angle * -1;
@@ -152,13 +145,17 @@ public class RobotContainer {
                     return driveRobotOriented.withVelocityX(vx)
                                 .withVelocityY(0)
                                 .withRotationalRate(Math.toRadians(angle));
-                } else {
+                } else if (!isFollowingPath) {
                     vx = (-controller.getLeftY() * MaxSpeed) * 0.5;
                     vy = (-controller.getLeftX() * MaxSpeed) * 0.5;
                     angle = (-controller.getRightX() * MaxAngularRate);
                     return drive.withVelocityX(vx)
                                 .withVelocityY(vy)
                                 .withRotationalRate((angle));
+                } else {
+                    return drive.withVelocityX(0)
+                    .withVelocityY(0)
+                    .withRotationalRate((0));
                 }
             })
         );

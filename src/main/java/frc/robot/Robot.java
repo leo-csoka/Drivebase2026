@@ -4,27 +4,39 @@
 
 package frc.robot;
 
+import com.pathplanner.lib.commands.PathfindingCommand;
+
+import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.RobotContainer;
-import frc.robot.subsystems.LimelightSubsystem;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 
 public class Robot extends TimedRobot {
   private Command m_autonomousCommand;
 
   private final RobotContainer m_robotContainer;
-  private final LimelightSubsystem limelightSubsystem;
+  private final boolean kUseLimelight = true;
+
 
   public Robot() {
     m_robotContainer = new RobotContainer();
-    limelightSubsystem = new LimelightSubsystem(m_robotContainer.drivetrain);
+    PathfindingCommand.warmupCommand().schedule();
   }
 
   @Override
   public void robotPeriodic() {
-    CommandScheduler.getInstance().run(); 
-    //LimelightCmd.schedule();
+    CommandScheduler.getInstance().run();
+    
+    if (kUseLimelight) {
+      double headingDeg = m_robotContainer.drivetrain.getPigeon2().getRotation2d().getDegrees();
+
+      LimelightHelpers.SetRobotOrientation("limelight", headingDeg, 0, 0, 0, 0, 0);
+      var llMeasurement = LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2("limelight");
+      if (llMeasurement != null && llMeasurement.tagCount > 0) {
+          m_robotContainer.drivetrain.addVisionMeasurement(llMeasurement.pose, llMeasurement.timestampSeconds);
+      }
+  }
   }
 
   @Override
@@ -39,7 +51,8 @@ public class Robot extends TimedRobot {
   @Override
   public void autonomousInit() {
     m_autonomousCommand = m_robotContainer.getAutonomousCommand();
-    limelightSubsystem.zeroPigeonYaw();
+
+    //limelightSubsystem.zeroPigeonYaw();
 
     if (m_autonomousCommand != null) {
       m_autonomousCommand.schedule();
@@ -54,6 +67,8 @@ public class Robot extends TimedRobot {
 
   @Override
   public void teleopInit() {
+  m_robotContainer.isFollowingPath = false;
+  
     if (m_autonomousCommand != null) {
       m_autonomousCommand.cancel();
     }
